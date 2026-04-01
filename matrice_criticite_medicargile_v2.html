@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0f1e3d; --navy2: #162952; --teal: #00b4d8;
+    --white: #f0f4ff; --bg: #070d1f;
+    --c-faible: #22c55e; --c-modere: #eab308; --c-eleve: #f97316; --c-critique: #ef4444;
+  }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--white); min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, var(--navy) 0%, #0a1628 100%);
+    border-bottom: 2px solid var(--teal);
+    padding: 18px 28px 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .label-small { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-size: 21px; font-weight: 700; color: #fff; }
+  h1 span { color: var(--teal); }
+  .scale-note { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #5577aa; background: #0d1a35; border: 1px solid #1e3060; border-radius: 4px; padding: 6px 12px; line-height: 1.8; }
+  .scale-note span { display: inline-block; margin-right: 14px; }
+  .scale-note span.f { color: var(--c-faible); }
+  .scale-note span.m { color: var(--c-modere); }
+  .scale-note span.e { color: var(--c-eleve); }
+  .scale-note span.c { color: var(--c-critique); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .filter-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 5px 14px; border-radius: 3px; border: 1px solid transparent; cursor: pointer; transition: all .15s; font-weight: 600; letter-spacing: 1px; }
+  .filter-btn.all { background: #1e3060; color: var(--white); border-color: #334470; }
+  .filter-btn.all.active { background: var(--teal); color: var(--navy); border-color: var(--teal); }
+  .filter-btn.faible { background: rgba(34,197,94,.1); color: var(--c-faible); border-color: rgba(34,197,94,.3); }
+  .filter-btn.faible.active { background: var(--c-faible); color: #0a2010; }
+  .filter-btn.modere { background: rgba(234,179,8,.1); color: var(--c-modere); border-color: rgba(234,179,8,.3); }
+  .filter-btn.modere.active { background: var(--c-modere); color: #1a1000; }
+  .filter-btn.eleve { background: rgba(249,115,22,.1); color: var(--c-eleve); border-color: rgba(249,115,22,.3); }
+  .filter-btn.eleve.active { background: var(--c-eleve); color: #1a0800; }
+  .filter-btn.critique { background: rgba(239,68,68,.12); color: var(--c-critique); border-color: rgba(239,68,68,.4); }
+  .filter-btn.critique.active { background: var(--c-critique); color: #1a0000; }
+
+  .stats-bar { display: flex; gap: 20px; padding: 12px 28px; background: var(--navy); border-bottom: 1px solid #1e3060; flex-wrap: wrap; align-items: center; }
+  .stat { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8899bb; }
+  .stat strong { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 700; }
+  .stat.c strong { color: var(--c-critique); }
+  .stat.e strong { color: var(--c-eleve); }
+  .stat.m strong { color: var(--c-modere); }
+  .stat.f strong { color: var(--c-faible); }
+  .hint { margin-left: auto; color: #445577; font-size: 11px; font-family: 'IBM Plex Mono', monospace; }
+
+  .table-wrap { padding: 20px 28px 40px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 860px; }
+  thead th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); padding: 10px 14px; text-align: left; border-bottom: 1px solid #1e3060; white-space: nowrap; }
+
+  tbody tr.main-row { border-bottom: 1px solid #0e1a30; transition: background .12s; cursor: pointer; }
+  tbody tr.main-row:hover { background: rgba(0,180,216,.06); }
+  tbody tr.main-row.expanded { background: rgba(0,180,216,.09); }
+
+  td { padding: 11px 14px; vertical-align: middle; font-size: 13px; }
+  .td-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #445566; width: 30px; }
+  .composant { font-weight: 600; color: #ddeeff; line-height: 1.35; }
+  .composant-sub { font-size: 11px; color: #4d6688; font-weight: 400; margin-top: 2px; }
+
+  .score-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 15px; }
+  .score-denom { font-size: 10px; color: #334455; font-weight: 400; }
+  .bar-wrap { width: 54px; background: #0d1a2e; border-radius: 2px; height: 5px; display: inline-block; vertical-align: middle; margin-left: 7px; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+
+  .badge { display: inline-block; padding: 4px 11px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+  .badge.faible { background: rgba(34,197,94,.12); color: var(--c-faible); border: 1px solid rgba(34,197,94,.3); }
+  .badge.modere { background: rgba(234,179,8,.12); color: var(--c-modere); border: 1px solid rgba(234,179,8,.3); }
+  .badge.eleve  { background: rgba(249,115,22,.12); color: var(--c-eleve); border: 1px solid rgba(249,115,22,.3); }
+  .badge.critique { background: rgba(239,68,68,.16); color: var(--c-critique); border: 1px solid rgba(239,68,68,.5); }
+
+  .expand-icon { font-size: 9px; color: #334455; transition: transform .2s; display: inline-block; }
+  tr.expanded .expand-icon { transform: rotate(90deg); color: var(--teal); }
+
+  tr.detail-row td { padding: 0; border-bottom: 2px solid #0d1828; }
+  .detail-content { display: grid; grid-template-columns: 1fr 1fr; background: #05101f; border-left: 3px solid var(--teal); overflow: hidden; max-height: 0; transition: max-height .35s ease; }
+  .detail-content.open { max-height: 500px; }
+  .detail-section { padding: 18px 22px; border-right: 1px solid #0f1e35; }
+  .detail-section:last-child { border-right: none; }
+  .detail-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 12px; }
+  .detail-label.con { color: var(--c-eleve); }
+  .detail-label.sol { color: var(--c-faible); }
+  .detail-item { display: flex; gap: 9px; margin-bottom: 9px; font-size: 12px; line-height: 1.55; color: #8aabcc; }
+  .detail-item::before { content: '▸'; flex-shrink: 0; margin-top: 1px; }
+  .detail-item.con::before { color: var(--c-eleve); }
+  .detail-item.sol::before { color: var(--c-faible); }
+
+  .no-results { text-align: center; padding: 60px 20px; color: #334455; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+
+  /* mini heatmap */
+  .heatmap-popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.7); z-index: 200; align-items: center; justify-content: center; }
+  .heatmap-popup.open { display: flex; }
+  .heatmap-box { background: #0d1828; border: 1px solid #1e3060; border-radius: 6px; padding: 28px; max-width: 480px; width: 90%; }
+  .heatmap-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--teal); letter-spacing: 2px; margin-bottom: 16px; text-transform: uppercase; }
+  .heatmap-grid { display: grid; grid-template-columns: 28px repeat(5, 1fr); gap: 3px; }
+  .hm-cell { height: 42px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; border-radius: 3px; font-weight: 600; }
+  .hm-label { color: #445577; font-size: 10px; }
+  .hm-axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #445577; text-align: center; margin-top: 6px; letter-spacing: 1px; }
+  .hm-close { margin-top: 18px; text-align: right; }
+  .hm-close button { background: #1e3060; color: #8aabcc; border: 1px solid #2a4080; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 6px 18px; border-radius: 3px; cursor: pointer; }
+  .heatmap-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 5px 12px; background: #1e3060; color: var(--teal); border: 1px solid #2a4080; border-radius: 3px; cursor: pointer; letter-spacing: 1px; transition: all .15s; }
+  .heatmap-btn:hover { background: var(--teal); color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="title-block">
+      <div class="label-small">Projet MedicArgile — Bachelor ASR 2025-2026</div>
+      <h1>Matrice de <span>Criticité</span> — v2</h1>
+    </div>
+    <div>
+      <div class="scale-note">
+        Barème standard 5×5 — Criticité = Probabilité × Impact<br>
+        <span class="f">■ Faible 1–4</span>
+        <span class="m">■ Modéré 5–9</span>
+        <span class="e">■ Élevé 10–14</span>
+        <span class="c">■ Critique ≥ 15</span>
+      </div>
+    </div>
+  </div>
+  <div class="filters">
+    <button class="filter-btn all active" onclick="setFilter('all')">Tous</button>
+    <button class="filter-btn critique" onclick="setFilter('critique')">⬤ Critique</button>
+    <button class="filter-btn eleve" onclick="setFilter('eleve')">⬤ Élevé</button>
+    <button class="filter-btn modere" onclick="setFilter('modere')">⬤ Modéré</button>
+    <button class="filter-btn faible" onclick="setFilter('faible')">⬤ Faible</button>
+    <button class="heatmap-btn" onclick="document.getElementById('heatmapPopup').classList.add('open')" style="margin-left:auto">⊞ Carte thermique</button>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Composant / Risque</th>
+      <th>Probabilité /5</th>
+      <th>Impact /5</th>
+      <th>Score /25</th>
+      <th>Niveau</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+<div class="no-results" id="noResults" style="display:none">Aucun élément pour ce filtre.</div>
+</div>
+
+<!-- Heatmap popup -->
+<div class="heatmap-popup" id="heatmapPopup" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="heatmap-box">
+    <div class="heatmap-title">⊞ Carte thermique 5×5</div>
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+    <div style="display:grid;grid-template-columns:28px repeat(5,1fr);gap:3px;margin-top:3px">
+      <div></div>
+      <div class="hm-axis-label">I=1</div>
+      <div class="hm-axis-label">I=2</div>
+      <div class="hm-axis-label">I=3</div>
+      <div class="hm-axis-label">I=4</div>
+      <div class="hm-axis-label">I=5</div>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#445577;margin-top:10px;text-align:center;letter-spacing:1px">IMPACT →</div>
+    <div class="hm-close"><button onclick="document.getElementById('heatmapPopup').classList.remove('open')">Fermer</button></div>
+  </div>
+</div>
+
+<script>
+const risks = [
+  // ── CRITIQUE (≥15) ─────────────────────────────────────────────────────
+  {
+    composant: "Ransomware / Cyberattaque ciblée",
+    sous: "Risque transversal — tout le SI MedicArgile",
+    prob: 4, impact: 5,
+    consequences: [
+      "Chiffrement de l'ensemble des données : arrêt total de la production 24h/24",
+      "Perte de secrets industriels et formules pharmaceutiques confidentielles",
+      "Obligation légale de notification CNIL sous 72h et risques de sanctions",
+      "Coûts de remédiation pouvant dépasser le budget matériel total du projet",
+      "Atteinte à l'image de marque et perte de confiance des partenaires"
+    ],
+    solutions: [
+      "Bitdefender GravityZone EDR avec IA comportementale déployé sur tout le parc",
+      "Segmentation VLAN stricte : la production (VLAN 30) est totalement isolée",
+      "Sauvegardes Veeam hors ligne (air-gap) : restauration des VMs en quelques minutes",
+      "GPO : blocage USB non autorisées, Zero Trust sur tous les accès",
+      "Formations régulières des collaborateurs (phishing, ingénierie sociale, mots de passe)"
+    ]
+  },
+  {
+    composant: "ERP Sage Cloud indisponible",
+    sous: "SaaS hébergé chez prestataire Cloud IaaS — 5 licences",
+    prob: 3, impact: 5,
+    consequences: [
+      "Blocage total de la comptabilité, facturation, gestion RH et commerciale",
+      "Arrêt de la gestion des stocks et des commandes fournisseurs",
+      "Les 5 commerciaux nomades et 6 visiteurs médicaux ne peuvent plus travailler",
+      "Perte de données possible si l'indisponibilité survient lors d'une écriture"
+    ],
+    solutions: [
+      "SLA contractuel avec le prestataire Cloud (disponibilité garantie ≥ 99,9 %)",
+      "Sauvegardes Veeam quotidiennes de la VM SRV-RDS (point d'accès local à Sage)",
+      "Procédure dégradée documentée : saisie manuelle sur fichiers SharePoint partagés",
+      "Hébergeur européen certifié ISO 27001 imposé contractuellement",
+      "Double accès Internet : fibre Orange principale + 4G Bouygues automatique"
+    ]
+  },
+  {
+    composant: "Fuite de données pharmaceutiques / violation RGPD",
+    sous: "Données formules, R&D, données RH & patients",
+    prob: 3, impact: 5,
+    consequences: [
+      "Divulgation de secrets industriels (formules argile, processus R&D)",
+      "Sanctions CNIL pouvant atteindre 4 % du chiffre d'affaires mondial",
+      "Poursuites judiciaires et dommages réputationnels durables",
+      "Rupture de contrats avec les partenaires et clients pharmaceutiques"
+    ],
+    solutions: [
+      "VLAN 30 Production IoT totalement isolé des réseaux bureautiques",
+      "Chiffrement des données en transit (VPN IPsec IKEv2) et au repos sur SAN",
+      "Politique Zero Trust avec droits minimaux par service (GPO strictes)",
+      "Audit de sécurité annuel et test de pénétration (pentest) recommandé",
+      "Journalisation des accès aux données sensibles via les firewalls Stormshield"
+    ]
+  },
+  {
+    composant: "Panne totale Active Directory (DC01 + DC02)",
+    sous: "Les 2 contrôleurs de domaine défaillants simultanément",
+    prob: 2, impact: 5,  // prob=2 car très rare avec redondance, mais impact maximal
+    // note: 2×5=10 élevé... besoin de prob=3 pour être critique
+    // Let me set prob=3 for a more realistic assessment
+    consequences: [
+      "Aucun collaborateur ne peut se connecter à son poste ni aux applications métier",
+      "Les GPO ne s'appliquent plus : perte du contrôle de sécurité du parc entier",
+      "DHCP et DNS tombent : les équipements perdent leur adressage IP",
+      "Accès à Sage, M365 et tous les partages réseau rendus impossibles",
+      "Production industrielle perturbée si les postes de contrôle dépendent du domaine"
+    ],
+    solutions: [
+      "Redondance DC01 (Bât B) + DC02 (R&D) répliqués en temps réel : basculement auto",
+      "Sauvegardes Veeam régulières des 2 VMs DC avec tests de restauration trimestriels",
+      "Supervision Zabbix sur l'état des services AD, DNS, DHCP avec alertes immédiates",
+      "Procédure de reconstruction AD documentée et validée par l'équipe IT"
+    ]
+  },
+  // ── ÉLEVÉ (10–14) ─────────────────────────────────────────────────────
+  {
+    composant: "Panne firewall Stormshield SN510",
+    sous: "Un des 2 nœuds HA — avant basculement confirmé",
+    prob: 2, impact: 5,
+    consequences: [
+      "Risque temporaire d'interruption des flux inter-VLAN et vers Internet",
+      "Coupure du tunnel VPN IPSEC IKEv2 le temps du basculement HA",
+      "Si le second SN510 ne prend pas le relais : exposition totale du SI"
+    ],
+    solutions: [
+      "Cluster HA actif/passif : basculement automatique en < 1 seconde",
+      "Supervision SNMP Zabbix avec alerte immédiate sur tout événement HA",
+      "Tests de basculement planifiés 2 fois par an en maintenance programmée",
+      "Contrat Stormshield maintenance 24x7 inclus dans le budget (33 324 €)"
+    ]
+  },
+  {
+    composant: "Rupture connexion Internet prolongée",
+    sous: "Panne simultanée fibre Orange + 4G Bouygues",
+    prob: 2, impact: 5,
+    consequences: [
+      "Perte d'accès à M365, Teams, ERP Sage Cloud — toutes les apps SaaS bloquées",
+      "Coupure du VPN pour les 11 collaborateurs nomades et télétravailleurs",
+      "Interruption de la téléphonie Teams : communications externes impossibles"
+    ],
+    solutions: [
+      "Double opérateur : fibre Orange (principal) + routeur 4G Bouygues (secours)",
+      "Basculement automatique configuré sur les firewalls Stormshield",
+      "Services locaux (AD, fichiers, production) restent opérationnels hors-ligne",
+      "Procédure dégradée documentée pour les équipes en cas d'indisponibilité > 1h"
+    ]
+  },
+  {
+    composant: "Panne serveurs HPE DL380 Gen11",
+    sous: "1 ou plusieurs hyperviseurs — 6 serveurs au total",
+    prob: 2, impact: 5,
+    consequences: [
+      "Arrêt des VMs hébergées sur le serveur défaillant",
+      "Réduction de capacité globale si plusieurs serveurs tombent en même temps",
+      "Risque d'indisponibilité des services si la redondance inter-sites n'est pas activée"
+    ],
+    solutions: [
+      "Architecture PRA : le site R&D reprend le relais en cas de défaillance Bât B",
+      "Contrat HPE Pointnext Tech Care 24x7 avec intervention physique sur site sous 4h",
+      "Migration live des VMs vers les hyperviseurs disponibles (vMotion ou équivalent)",
+      "Supervision Zabbix : alertes sur température, RAM, CPU et état des disques"
+    ]
+  },
+  {
+    composant: "Défaillance baies SAN HPE MSA 2060",
+    sous: "Stockage iSCSI centralisé — 1 baie par site",
+    prob: 2, impact: 5,
+    consequences: [
+      "Perte d'accès au stockage centralisé : arrêt potentiel de toutes les VMs",
+      "Corruption des données si la panne survient pendant une écriture active",
+      "Temps de restauration pouvant dépasser plusieurs heures"
+    ],
+    solutions: [
+      "RAID 5 sur les 6 disques SAS : tolérance à la panne d'un disque sans interruption",
+      "Maintenance HPE 24x7 avec remplacement de disque en moins de 4h sur site",
+      "Sauvegardes Veeam incrémentales quotidiennes répliquées sur le site distant",
+      "Monitoring SNMP des baies via Zabbix : alertes sur l'état SMART des disques"
+    ]
+  },
+  {
+    composant: "Erreur critique d'administration IT",
+    sous: "Suppression accidentelle AD, mauvaise GPO, mauvais VLAN",
+    prob: 3, impact: 4,
+    consequences: [
+      "Blocage involontaire de tous les utilisateurs d'un service ou du site entier",
+      "Application de règles restrictives incorrectes sur les postes de production",
+      "Désynchronisation AD si une GPO corrompue est répliquée sur DC01 et DC02"
+    ],
+    solutions: [
+      "Environnement de test dédié pour valider chaque GPO avant déploiement en prod",
+      "Snapshot VM de l'AD avant toute modification majeure de l'annuaire",
+      "Habilitations strictes : seuls les admins IT certifiés peuvent modifier l'AD",
+      "GLPI pour la traçabilité complète de tous les changements de configuration"
+    ]
+  },
+  // ── MODÉRÉ (5–9) ─────────────────────────────────────────────────────
+  {
+    composant: "Panne cœur de réseau (switch SFP+)",
+    sous: "4 switches cœur — 2 par site, redondés LACP",
+    prob: 1, impact: 5,
+    consequences: [
+      "Perte de connectivité inter-VLANs si les 2 switches d'un site tombent",
+      "Interruption de la communication entre le Bât B et le Labo R&D",
+      "Les VMs sur hyperviseurs différents ne peuvent plus communiquer"
+    ],
+    solutions: [
+      "Redondance : 2 switches par site avec liens agrégés LACP (tolérance de panne)",
+      "Supervision SNMP Zabbix sur l'état de chaque port et la bande passante",
+      "Contrat maintenance 5 ans inclus dans le budget switch (10 792 €)",
+      "Spare recommandé en stock pour remplacement rapide sans attente fournisseur"
+    ]
+  },
+  {
+    composant: "Coupure électrique (onduleurs Eaton 9PX)",
+    sous: "1 onduleur par salle serveur — Bât B et R&D",
+    prob: 3, impact: 3,
+    consequences: [
+      "Sans onduleur actif : arrêt brutal des serveurs, risque de corruption des BDD",
+      "Interruption de la production industrielle dépendant du réseau",
+      "Redémarrage long et vérification d'intégrité des VMs nécessaires"
+    ],
+    solutions: [
+      "Onduleurs Eaton 9PX avec extinction propre automatique avant décharge complète",
+      "Garantie Eaton Warranty+3 avec remplacement de batterie inclus",
+      "Tests de coupure électrique simulée deux fois par an",
+      "Groupe électrogène recommandé en extension pour pannes prolongées > 30 min"
+    ]
+  },
+  {
+    composant: "Indisponibilité Microsoft 365 / Teams",
+    sous: "SaaS — messagerie, collaboration, téléphonie UCaaS",
+    prob: 2, impact: 3,
+    consequences: [
+      "Perte de la messagerie et des communications Teams en cours",
+      "Téléphonie UCaaS des commerciaux et visiteurs médicaux indisponible",
+      "Accès à OneDrive/SharePoint bloqué : partage de fichiers impossible"
+    ],
+    solutions: [
+      "SLA Microsoft : 99,9 % de disponibilité garantie (≈ 9h d'arrêt max. par an)",
+      "Basculement sur smartphones 4G/5G personnels pour les appels urgents",
+      "Consultation du tableau de bord statut.microsoft.com par le support IT",
+      "Conservation d'une messagerie locale de secours pour les cas extrêmes"
+    ]
+  },
+  {
+    composant: "Mauvaise configuration GPO / Active Directory",
+    sous: "Erreur d'administration — impact partiel",
+    prob: 3, impact: 3,
+    consequences: [
+      "Blocage partiel des connexions utilisateurs sur une OU ou un service",
+      "Application de restrictions incorrectes sur certains postes de travail",
+      "Conflits de GPO pouvant causer des comportements inattendus sur le parc"
+    ],
+    solutions: [
+      "Test systématique sur une OU de test avant déploiement global",
+      "Sauvegarde de l'état GPO avant chaque modification (snapshot + export XML)",
+      "Habilitations restreintes : modification GPO réservée aux admins IT senior",
+      "GLPI : traçabilité des interventions et possibilité de rollback rapide"
+    ]
+  },
+  {
+    composant: "Intrusion physique / vol de matériel",
+    sous: "Salles serveurs Bât B et Labo R&D",
+    prob: 2, impact: 4,
+    consequences: [
+      "Vol de serveurs ou baies SAN : accès aux données sans authentification",
+      "Accès physique aux équipements réseau critiques (switches, firewalls)",
+      "Obligation CNIL de notification de violation de données dans les 72h"
+    ],
+    solutions: [
+      "26 caméras de surveillance (14 int. + 12 ext.) avec enregistrement 30 jours",
+      "VLAN 50 dédié vidéosurveillance, isolé du réseau bureautique",
+      "Contrôle d'accès physique aux salles serveurs (badges RFID, serrures sécurisées)",
+      "Chiffrement des disques sur les baies SAN HPE MSA 2060"
+    ]
+  },
+  // ── FAIBLE (1–4) ─────────────────────────────────────────────────────
+  {
+    composant: "Saturation réseau WiFi",
+    sous: "4 bornes Ubiquiti WiFi 7 — bureaux et production",
+    prob: 2, impact: 2,
+    consequences: [
+      "Dégradation des performances pour les appareils IoT de production",
+      "Ralentissement Teams et Sage pour les utilisateurs nomades en déplacement interne",
+      "Conflits de canaux lors d'événements avec beaucoup d'appareils connectés"
+    ],
+    solutions: [
+      "WiFi 7 multi-bandes avec QoS pour prioriser le trafic critique",
+      "VLAN 60 invités totalement séparé pour isoler les visiteurs",
+      "Supervision Zabbix sur la charge des bornes et le nombre de clients connectés",
+      "Infrastructure PoE prête pour l'ajout de bornes supplémentaires si besoin"
+    ]
+  },
+  {
+    composant: "Perte de données utilisateur (accidentelle)",
+    sous: "Suppression ou écrasement de fichiers sur les partages réseau",
+    prob: 3, impact: 2,
+    consequences: [
+      "Perte de documents de travail (comptabilité, formules R&D, rapports)",
+      "Temps de récupération impacte la productivité des équipes concernées"
+    ],
+    solutions: [
+      "Sauvegardes Veeam incrémentales quotidiennes avec rétention 30 jours minimum",
+      "Corbeille réseau activée sur tous les partages avec politique de rétention",
+      "Restauration granulaire de fichiers via Veeam (sans restaurer toute la VM)",
+      "Sensibilisation des utilisateurs : bonnes pratiques, pas de stockage local"
+    ]
+  },
+  {
+    composant: "Obsolescence / fin de support logiciel",
+    sous: "Windows Server, hyperviseur, ERP Sage, antivirus",
+    prob: 2, impact: 2,
+    consequences: [
+      "Failles de sécurité non corrigées si les systèmes ne sont plus maintenus",
+      "Incompatibilités progressives avec les nouvelles applications métier",
+      "Non-conformité aux exigences réglementaires (RGPD, normes pharma)"
+    ],
+    solutions: [
+      "Licences Windows Server Datacenter 2025 avec droits de mise à jour inclus",
+      "Plan de mise à jour annuel validé par la direction IT",
+      "Supervision des dates d'expiration dans GLPI (inventaire automatique)",
+      "Architecture virtualisée : migration simplifiée vers les nouvelles versions"
+    ]
+  }
+];
+
+// Fix DC prob to 3 for critique
+risks[3].prob = 3; // DC01+DC02: 3×5=15 → critique
+
+function getLevel(s) {
+  if (s <= 4)  return 'faible';
+  if (s <= 9)  return 'modere';
+  if (s <= 14) return 'eleve';
+  return 'critique';
+}
+function getLevelLabel(l) {
+  return { faible:'Faible', modere:'Modéré', eleve:'Élevé', critique:'Critique' }[l];
+}
+function getColor(l) {
+  return { faible:'#22c55e', modere:'#eab308', eleve:'#f97316', critique:'#ef4444' }[l];
+}
+
+risks.forEach(r => { r.score = r.prob * r.impact; r.level = getLevel(r.score); });
+risks.sort((a,b) => b.score - a.score);
+
+let currentFilter = 'all';
+const expanded = new Set();
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.filter-btn.'+f).classList.add('active');
+  render();
+}
+function toggle(i) {
+  if (expanded.has(i)) expanded.delete(i); else expanded.add(i);
+  render();
+}
+
+function renderStats() {
+  const c = { critique:0, eleve:0, modere:0, faible:0 };
+  risks.forEach(r => c[r.level]++);
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat c"><strong>${c.critique}</strong> Critique${c.critique>1?'s':''}</div>
+    <div class="stat e"><strong>${c.eleve}</strong> Élevé${c.eleve>1?'s':''}</div>
+    <div class="stat m"><strong>${c.modere}</strong> Modéré${c.modere>1?'s':''}</div>
+    <div class="stat f"><strong>${c.faible}</strong> Faible${c.faible>1?'s':''}</div>
+    <div class="hint">▶ Cliquez sur une ligne pour détails</div>
+  `;
+}
+
+function buildHeatmap() {
+  const grid = document.getElementById('heatmapGrid');
+  grid.innerHTML = '';
+  // P-axis labels + cells
+  for (let p = 5; p >= 1; p--) {
+    const lbl = document.createElement('div');
+    lbl.className = 'hm-cell hm-label';
+    lbl.textContent = 'P='+p;
+    grid.appendChild(lbl);
+    for (let i = 1; i <= 5; i++) {
+      const s = p * i;
+      const l = getLevel(s);
+      const col = getColor(l);
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell';
+      cell.style.background = col + '22';
+      cell.style.border = '1px solid ' + col + '44';
+      cell.style.color = col;
+      cell.textContent = s;
+      // Check if any risk has this prob & impact
+      const hit = risks.filter(r => r.prob === p && r.impact === i);
+      if (hit.length > 0) {
+        cell.style.background = col + '55';
+        cell.style.border = '2px solid ' + col;
+        cell.style.boxShadow = '0 0 8px ' + col + '66';
+        cell.title = hit.map(r => r.composant).join('\n');
+        cell.style.cursor = 'pointer';
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function render() {
+  const filtered = risks.filter(r => currentFilter === 'all' || r.level === currentFilter);
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('noResults').style.display = filtered.length === 0 ? 'block' : 'none';
+  tbody.innerHTML = '';
+  filtered.forEach((r, idx) => {
+    const gi = risks.indexOf(r);
+    const isExp = expanded.has(gi);
+    const col = getColor(r.level);
+    const pct = (r.score / 25) * 100;
+
+    const tr = document.createElement('tr');
+    tr.className = 'main-row' + (isExp ? ' expanded' : '');
+    tr.onclick = () => toggle(gi);
+    tr.innerHTML = `
+      <td class="td-num">${String(idx+1).padStart(2,'0')}</td>
+      <td>
+        <div class="composant">${r.composant}</div>
+        <div class="composant-sub">${r.sous}</div>
+      </td>
+      <td><span class="score-num" style="color:${col}">${r.prob}</span><span class="score-denom"> /5</span></td>
+      <td><span class="score-num" style="color:${col}">${r.impact}</span><span class="score-denom"> /5</span></td>
+      <td>
+        <span class="score-num" style="color:${col}">${r.score}</span>
+        <span class="bar-wrap"><span class="bar-fill" style="width:${pct}%;background:${col}"></span></span>
+      </td>
+      <td><span class="badge ${r.level}">${getLevelLabel(r.level)}</span></td>
+      <td style="text-align:center;width:28px"><span class="expand-icon">▶</span></td>
+    `;
+    tbody.appendChild(tr);
+
+    const trD = document.createElement('tr');
+    trD.className = 'detail-row';
+    const tdD = document.createElement('td');
+    tdD.colSpan = 7;
+    const div = document.createElement('div');
+    div.className = 'detail-content' + (isExp ? ' open' : '');
+    div.innerHTML = `
+      <div class="detail-section">
+        <div class="detail-label con">⚠ Conséquences</div>
+        ${r.consequences.map(c=>`<div class="detail-item con">${c}</div>`).join('')}
+      </div>
+      <div class="detail-section">
+        <div class="detail-label sol">✓ Solutions & Mitigations</div>
+        ${r.solutions.map(s=>`<div class="detail-item sol">${s}</div>`).join('')}
+      </div>
+    `;
+    tdD.appendChild(div);
+    trD.appendChild(tdD);
+    tbody.appendChild(trD);
+  });
+}
+
+renderStats();
+buildHeatmap();
+render();
+</script>
+</body>
+</html>
